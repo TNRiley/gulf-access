@@ -3,7 +3,7 @@
   "title": "Gulf Access",
   "favicon": "🛥️",
   "built": "2026-11-11",
-  "published": false,
+  "published": true,
   "tagline": "Cape Coral says it has 300 miles of freshwater canal; one-metre lidar finds 368 miles of canal in the city with only 114 of them standing above the tide, and the state's own waterbody map counts 135 as fresh.",
   "blurb": "Every residential canal on Florida's Gulf coast, found without a map: 512 ten-kilometre tiles of USGS lidar across 22 counties, searched for narrow flat water with houses on it and sorted by how high the water stands. It finds 3,376 km of canal, 1,340 km of it held more than 0.6 m above the sea behind weirs, and draws eight canal towns as topographic plates with the water coloured by class. Cape Coral's published 300 miles of freshwater canal cannot be recovered from the ground or from the state's map, which agree with each other on 92% of the city. OpenStreetMap, the first choice for the geometry, turned out to hold a centreline for a third of these canals and 1% of Marco Island's, and the coast-wide share of canal at tide height moves from 48% to 72% with the definition of a canal, so the page reports it as a range.",
   "tags": [
