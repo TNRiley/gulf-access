@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gulf Access</title>
+<meta name="description" content="Every residential canal on Florida's Gulf coast, found from one-metre lidar alone and sorted by the height of its water: at the tide, or held above it behind a weir.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,900&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* A plat map laid over a chart. Blue is water standing at the tide, orange is
+   water held above it, violet is the stretch the two instruments argue about. */
+:root{
+  --paper:#f2f0e8; --panel:#fbfaf5; --sunk:#e6e3d6;
+  --ink:#131a22; --ink2:#48535f; --ink3:#87909b;
+  --rule:#d2cfc1; --rule2:#e4e1d4;
+  --tide:#17688a; --held:#c8561a; --disp:#7b4ca6; --pond:#8a8e98; --sea:#c5dae4;
+  color-scheme:light dark;
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --paper:#0e1317; --panel:#151c22; --sunk:#090d10;
+  --ink:#e9e6dd; --ink2:#a4adb6; --ink3:#69737d;
+  --rule:#2a343d; --rule2:#1e262d;
+  --tide:#56b6da; --held:#f08c4e; --disp:#b796e4; --pond:#767b87; --sea:#1d313c;
+}}
+:root[data-theme="dark"]{
+  --paper:#0e1317; --panel:#151c22; --sunk:#090d10;
+  --ink:#e9e6dd; --ink2:#a4adb6; --ink3:#69737d;
+  --rule:#2a343d; --rule2:#1e262d;
+  --tide:#56b6da; --held:#f08c4e; --disp:#b796e4; --pond:#767b87; --sea:#1d313c;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font:400 16.5px/1.62 "IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums lining-nums}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+@media(min-width:700px){.wrap{padding:0 30px}}
+h1,h2,h3{margin:0;font-family:"Fraunces",Georgia,serif;line-height:1.04;text-wrap:balance}
+h1{font-size:clamp(3.1rem,12vw,7.4rem);font-weight:900;letter-spacing:-.03em}
+h2{font-size:clamp(1.7rem,4.8vw,2.8rem);font-weight:700;letter-spacing:-.015em}
+h3{font-family:"IBM Plex Sans",sans-serif;font-size:1.02rem;font-weight:600}
+p{margin:0 0 1.05em;max-width:68ch}
+a{color:var(--tide)}
+:focus-visible{outline:2px solid var(--tide);outline-offset:2px}
+.mono,.num{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+.num{font-weight:600}
+b{font-weight:600}
+.t{color:var(--tide)} .h{color:var(--held)} .d{color:var(--disp)}
+.kicker{font:500 11px/1 "IBM Plex Mono",monospace;letter-spacing:.22em;text-transform:uppercase;color:var(--ink3);margin:0 0 18px}
+header.mast{padding-top:52px}
+.stamp{display:inline-block;max-width:100%;border:2px solid var(--ink);padding:4px 11px 5px;
+  font:600 11px/1 "IBM Plex Mono",monospace;letter-spacing:.2em;text-transform:uppercase;margin-bottom:24px}
+.dek{font-size:19.5px;color:var(--ink2);max-width:64ch;margin-top:24px}
+.dek b{color:var(--ink)}
+.strip{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--rule);
+  border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:40px 0 0}
+@media(min-width:880px){.strip{grid-template-columns:repeat(4,1fr)}}
+.strip>div{background:var(--paper);padding:17px 18px 19px}
+.strip .v{font-family:"Fraunces",serif;font-size:34px;font-weight:700;letter-spacing:-.02em;line-height:1.02}
+.strip .k{font-size:12.5px;color:var(--ink2);margin-top:6px;line-height:1.42;max-width:34ch}
+section{margin-top:84px}
+.sechead{border-top:2px solid var(--ink);padding-top:14px}
+.sublede{color:var(--ink2);max-width:70ch;margin-top:12px}
+.note{font-size:13.5px;color:var(--ink2);border-left:2px solid var(--rule);padding-left:13px;max-width:78ch;margin-top:18px}
+.note.warn{border-left-color:var(--held)}
+.cols{display:grid;gap:26px;margin-top:22px}
+@media(min-width:900px){.cols{grid-template-columns:1fr 1fr}}
+.card{border:1px solid var(--rule);background:var(--panel);padding:16px 18px 14px;margin-top:22px}
+.card h3{margin-bottom:4px}
+.card .cap{font-size:13px;color:var(--ink2);margin:0 0 12px;max-width:80ch}
+svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{font-family:"IBM Plex Mono",monospace;fill:var(--ink2);font-size:11px}
+svg .lab{font-family:"IBM Plex Sans",sans-serif;font-size:12.5px;fill:var(--ink)}
+svg .ax{stroke:var(--rule);stroke-width:1}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--ink2);margin-top:10px}
+.legend i{display:inline-block;width:11px;height:11px;margin-right:6px;vertical-align:-1px;border-radius:2px}
+.btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+.btns button{appearance:none;border:1px solid var(--rule);background:var(--panel);color:var(--ink2);
+  font:500 12.5px/1 "IBM Plex Sans",sans-serif;padding:8px 11px;cursor:pointer;border-radius:2px}
+.btns button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.mapbox{position:relative;border:1px solid var(--rule);background:var(--sunk);margin-top:14px;overflow:hidden}
+.mapbox canvas{display:block;width:100%;height:auto;cursor:crosshair}
+.readout{position:absolute;left:10px;top:9px;font:500 11.5px/1.3 "IBM Plex Mono",monospace;color:var(--ink);
+  background:color-mix(in srgb,var(--panel) 86%,transparent);padding:5px 8px;pointer-events:none;max-width:calc(100% - 20px)}
+table.tb{border-collapse:collapse;width:100%;font-size:13.5px}
+table.tb th{font:500 10.5px/1.3 "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);
+  text-align:right;padding:7px 8px;border-bottom:1px solid var(--rule);vertical-align:bottom}
+table.tb td{padding:6px 8px;border-bottom:1px solid var(--rule2);text-align:right;font-family:"IBM Plex Mono",monospace}
+table.tb th:first-child,table.tb td:first-child{text-align:left;font-family:"IBM Plex Sans",sans-serif}
+table.tb tr.tot td{font-weight:600;border-top:1px solid var(--ink);border-bottom:0}
+table.tb tr.on td{background:color-mix(in srgb,var(--tide) 10%,transparent)}
+.scroll{overflow-x:auto}
+.methods{border:1px solid var(--rule);background:var(--panel);padding:8px 20px 14px;margin-top:22px}
+.methods h3{margin:20px 0 6px}
+.methods p,.methods li{font-size:14.5px;color:var(--ink2);max-width:84ch}
+.methods ul{margin:0 0 1em;padding-left:20px}
+.methods li{margin-bottom:.45em}
+.methods b{color:var(--ink)}
+footer{margin:84px 0 60px;padding-top:16px;border-top:1px solid var(--rule);font-size:12.5px;color:var(--ink3)}
+#loading{font:500 13px/1.4 "IBM Plex Mono",monospace;color:var(--ink3);margin-top:30px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="mast">
+  <div class="stamp">Florida Gulf coast &middot; residential canals &middot; 1 m lidar</div>
+  <h1>Gulf Access</h1>
+  <p class="dek">Cape Coral says it has <b>300 miles of freshwater canal</b>. One-metre lidar finds
+  <b><span data-v="cc_mi"></span> miles</b> of canal in the city, and only <b class="h"><span data-v="cc_held_mi"></span> miles</b>
+  of it stands above the height of the tide. The state's own waterbody map counts <b class="h"><span data-v="cc_dep_mi"></span> miles</b> as fresh.
+  Neither instrument can find the other half of the city's figure.</p>
+  <p class="dek" style="font-size:16.5px;margin-top:12px">The canals here are not taken from any map. They are read off the ground:
+  <span data-v="tiles"></span> ten-kilometre tiles of the USGS lidar surface across 22 Gulf-coast counties, searched for narrow
+  water with houses on it, then sorted by the one thing a laser measures well, which is how high the water stands.</p>
+  <div id="loading">Unpacking the elevation data&hellip;</div>
+  <div class="strip" id="strip" hidden>
+    <div><div class="v"><span data-v="all_km"></span> km</div><div class="k">of residential canal found in the lidar across the Gulf-coast counties, under the page's default rule for what a canal is</div></div>
+    <div><div class="v h"><span data-v="all_held"></span> km</div><div class="k">held more than 0.6 m above sea level, behind a weir. Whatever else it is, this water is not on the tide</div></div>
+    <div><div class="v t"><span data-v="all_tidal"></span> km</div><div class="k">standing at tide height where the state also maps estuary. Another <span data-v="all_disp"></span> km stands that low but is mapped as fresh</div></div>
+    <div><div class="v"><span data-v="all_osm"></span>%</div><div class="k">of that length has a canal centreline in OpenStreetMap. On Marco Island it is <span data-v="marco_osm"></span>%</div></div>
+  </div>
+</header>
+
+<main id="main" hidden>
+
+<section>
+  <div class="sechead"><p class="kicker">01 &middot; the claim</p>
+  <h2>Three counts of one city's fresh water</h2></div>
+  <p class="sublede">Cape Coral is the largest canal city on the coast and the only one that publishes a split. Its utilities
+  department states that the <i>&ldquo;freshwater canal system is comprised of 300 miles of freshwater canals&rdquo;</i>, and the
+  city describes the whole system as 400 miles. Here is that figure beside two measurements that do not depend on it or on each other.</p>
+  <div class="card">
+    <h3>Miles of canal in Cape Coral, by who is counting</h3>
+    <p class="cap">Orange is fresh water held above the tide. Blue is everything else each source counts.</p>
+    <div id="ccbars"></div>
+  </div>
+  <div class="cols">
+    <div>
+      <p>The lidar measurement is a floor and a ceiling at once. It finds <b><span data-v="cc_km"></span> km</b> of canal inside the city
+      limits (<span data-v="cc_mi"></span> miles, or <span data-v="cc_pct_of_400"></span>% of the 400 the city claims in total, so very little is going unseen).
+      Of that, <b class="h"><span data-v="cc_held_km"></span> km</b> has its water surface more than 0.6 m above sea level, higher than an ordinary tide
+      stands here, so that water is certainly held. The line sits where the city's water sorts itself: only <span data-v="cc_gap_km"></span> km of canal stands between 0.55 and 1.05 m,
+      with <span data-v="cc_low_km"></span> km below the gap and the weir staircase above it.</p>
+      <p>The second measure is the Florida Department of Environmental Protection's waterbody map, which draws Cape Coral as separate
+      assessment units and classes each as stream (fresh) or estuary. It puts <b class="h"><span data-v="cc_dep_km"></span> km</b> of the same canals in fresh units.</p>
+    </div>
+    <div>
+      <p>The two agree on <b><span data-v="cc_agree_pct"></span>%</b> of the city's canal length: <span data-v="cc_both_fresh"></span> km both call held and fresh,
+      <span data-v="cc_both_tidal"></span> km both put at the tide. They part on <span class="d"><b><span data-v="cc_low_fresh"></span> km</b></span> that the state
+      calls fresh but that stands inside the tide's range, which is exactly where a laser cannot referee.</p>
+      <p>For the city's 300 miles to be right, nearly every canal standing between 0.1 and 0.5 m would have to be fresh water held a hand's breadth
+      above the sea, including the stretches the state classes as estuary. The city does not say how it counts. It may be counting shoreline, or lakes,
+      or something this page cannot see. What can be said is that the figure cannot be recovered from the ground or from the state's map.</p>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Where Cape Coral's canal water stands</h3>
+    <p class="cap">Canal length by water-surface elevation, in 5 cm steps. Colour is the state's class for the same canal, not the lidar's.
+    The dashed line is 0.6 m. The staircase to the right is the weir system: each step is a basin held at its own stage.</p>
+    <div id="cchist"></div>
+    <div class="legend"><span><i style="background:var(--tide)"></i>state maps it as estuary</span><span><i style="background:var(--held)"></i>state maps it as fresh</span></div>
+  </div>
+</section>
+
+<section>
+  <div class="sechead"><p class="kicker">02 &middot; the ground</p>
+  <h2>Eight canal towns, as the laser sees them</h2></div>
+  <p class="sublede">Each plate is the bare-earth lidar surface with one-metre contours, and the water the detector found, coloured by class.
+  Move over a plate to read the elevation under the pointer. Land is tinted by height; the darkest ground on these plates is rarely more than a few metres up.</p>
+  <div class="btns" id="platebtns"></div>
+  <div class="mapbox"><canvas id="plate"></canvas><div class="readout" id="readout">&nbsp;</div></div>
+  <div class="legend">
+    <span><i style="background:var(--tide)"></i>canal at tide height</span>
+    <span><i style="background:var(--held)"></i>canal held above 0.6 m</span>
+    <span><i style="background:var(--disp)"></i>at tide height, state says fresh</span>
+    <span><i style="background:var(--pond)"></i>other narrow water by houses (ponds, lake chains, creeks)</span>
+    <span><i style="background:var(--sea)"></i>open water</span>
+  </div>
+  <p class="note" id="platenote"></p>
+</section>
+
+<section>
+  <div class="sechead"><p class="kicker">03 &middot; the coast</p>
+  <h2>What counts as a canal moves the answer</h2></div>
+  <p class="sublede">The detector finds <span data-v="narrow_km"></span> km of narrow water of every kind in the tiles. Keeping only what runs past residential
+  streets leaves <span data-v="res_km"></span> km, and that still mixes dredged canals with subdivision lakes. There is no clean geometric line between
+  the two, so the rule is yours to change. Under every rule here Cape Coral's held canal comes to between <span data-v="cc_held_min_mi"></span> and <span data-v="cc_held_max_mi"></span> miles,
+  nowhere near 300. The coast-wide share at tide height is another matter.</p>
+  <div class="btns" id="rulebtns"></div>
+  <div class="cols">
+    <div>
+      <div class="mapbox" style="background:var(--panel)"><canvas id="coast"></canvas></div>
+      <div class="legend"><span><i style="background:var(--tide)"></i>at tide height</span><span><i style="background:var(--held)"></i>held above 0.6 m</span><span><i style="background:var(--disp)"></i>low, state says fresh</span></div>
+    </div>
+    <div>
+      <div class="scroll"><table class="tb" id="ruletb"></table></div>
+      <p class="note warn">The share of canal standing at tide height runs from <b><span data-v="share_min"></span>%</b> to <b><span data-v="share_max"></span>%</b>
+      depending on the rule. That spread is the reason no coast-wide share appears at the top of this page. The default rule keeps
+      <span data-v="cal_pos"></span>% of the narrow water in twelve towns known to be canal towns and still lets in <span data-v="cal_neg"></span>% of it in ten
+      suburbs known to be built round lakes.</p>
+    </div>
+  </div>
+  <div class="card">
+    <h3>By county, under the selected rule</h3>
+    <div class="scroll"><table class="tb" id="cotb"></table></div>
+  </div>
+</section>
+
+<section>
+  <div class="sechead"><p class="kicker">04 &middot; the lots</p>
+  <h2>The lots stand a metre above the marsh</h2></div>
+  <p class="sublede">A canal estate is made by digging the canal and piling what comes out onto the lots. The lidar cannot tell fill from ground that was
+  already high, but it can measure the step. Along tidal canals the ground within 45 m of the water stands a median <b><span data-v="fb_tidal_lot"></span> m</b> above it. Along the unbuilt tidal
+  creeks in the same tiles, with no residential street near them, the banks stand <b><span data-v="fb_wild"></span> m</b>.</p>
+  <div class="card">
+    <h3>How far the ground stands above the water</h3>
+    <p class="cap">Length-weighted. The bar spans the middle half of canal length, the whiskers the middle 80%, the tick is the median.
+    Two independent readings for the canals: the lots beside the water, and the crown of the nearest residential street.</p>
+    <div id="fbchart"></div>
+  </div>
+  <div class="cols">
+    <p>The street reading runs about a quarter of a metre under the lot reading in both classes, as it should: houses sit on pads above their roads.
+    The two were never combined. They agree on the comparison that matters, which is that held canals keep roughly the same freeboard
+    (<span data-v="fb_held_lot"></span> m by lots, <span data-v="fb_held_street"></span> m by streets) as tidal ones
+    (<span data-v="fb_tidal_lot"></span> m and <span data-v="fb_tidal_street"></span> m), from sea level to water held <span data-v="max_level"></span> m up.</p>
+    <p>The unbuilt creeks are the control. If the detector's idea of a bank simply produced a metre and a half everywhere, the creeks would show it too.
+    They do not. Water level and bank height track each other tightly on every kind of water, built or not, so that correlation is not offered here as a finding:
+    it would be true of a puddle.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sechead"><p class="kicker">05 &middot; the instruments</p>
+  <h2>Sea level is a number somebody typed</h2></div>
+  <p class="sublede">Three things about the tools turned out to matter as much as anything about the canals.</p>
+  <div class="cols">
+    <div class="card" style="margin-top:0">
+      <h3>The sea stands at exactly 0.00 m</h3>
+      <p class="cap">Level of open water at least 300 m across, one reading per tile, for the <span data-v="sea_tiles"></span> tiles that have any.
+      In <span data-v="sea_zero"></span> of them it reads 0.00 m. That is not the tide. Lidar contractors flatten tidal water to a constant, and most of this coast got zero.
+      Canals inside the towns were flattened one at a time to whatever stage they were at, which is why tidal canals read anywhere from 0.00 to about 0.5 m.</p>
+      <div id="seachart"></div>
+    </div>
+    <div class="card" style="margin-top:0">
+      <h3>The map does not have most of them</h3>
+      <p class="cap">Share of each town's detected canal length that lies within 40 m of an OpenStreetMap <span class="mono">waterway=canal</span> line.
+      Tidal finger canals are usually drawn as coastline instead, with no centreline at all.</p>
+      <div id="osmchart"></div>
+    </div>
+  </div>
+  <p class="note">The third: water under about 30 m wide is not always flattened at all. A detector that asks for perfectly flat water finds 141 km of canal
+  in one test tile of Cape Coral; the same tile holds about 225 km. The narrow canals had to be picked up as trenches standing at the level of the flat water nearby.</p>
+</section>
+
+<section>
+  <div class="sechead"><p class="kicker">06 &middot; methods</p>
+  <h2>What was measured, and what was not</h2></div>
+  <div class="methods">
+    <h3>Sources</h3>
+    <ul>
+      <li><b>USGS 3D Elevation Program, 1 m lidar DEM</b>, read through The National Map's <span class="mono">3DEPElevation</span> image service
+      (<span class="mono">exportImage</span>, 32-bit float, nearest neighbour, 5 m pixels in UTM 17N), 512 tiles of 10 km. US Government work, public domain.</li>
+      <li><b>OpenStreetMap</b>, Florida extract from Geofabrik dated 2026-11-10: residential streets (to decide what is residential), river and stream lines
+      (to set aside natural water), canal lines and coastline (for comparison only). &copy; OpenStreetMap contributors, ODbL 1.0.</li>
+      <li><b>Florida DEP Waterbody IDs (WBIDs)</b>, 6,894 assessment polygons with a water type each, from the department's open data service.
+      Florida public record, credited to DEP's Division of Environmental Assessment and Restoration.</li>
+      <li><b>US Census TIGERweb</b> county and place boundaries, to name where each canal is. Public domain.</li>
+      <li><b>City of Cape Coral</b>, Utilities, Water Reclamation page, read 2026-11-11, for the quoted 300 miles; and the city's water quality page for &ldquo;400-mile canal system&rdquo;.</li>
+    </ul>
+    <h3>How a canal is found</h3>
+    <ul>
+      <li><b>Water</b> is any 15 m window of the surface that is flat to 3 cm, grown out over neighbours at the same height, plus trenches at least 1.2 m deep
+      that stand within 0.3 m of the level of flat water inside 800 m. Lidar contractors flatten water bodies; bare ground is never that flat.</li>
+      <li><b>Narrow</b> water is the centreline of that mask wherever the channel is 7.5 to 110 m wide. Length is measured along the centreline.</li>
+      <li>A <b>piece</b> is a connected run of centreline. It is kept if it is at least 150 m long, at least six times longer than wide, and cut at least 0.3 m below the ground beside it.</li>
+      <li><b>Residential</b>: at least half its length lies within 120 m of an OpenStreetMap residential street. Pieces OpenStreetMap labels river or stream for half their length are set aside.</li>
+      <li><b>Canal</b>, by the default rule: a residential piece that belongs to a network at least 2 km long, or whose banks run ruler-straight for half its length
+      (orientation coherence of the water's edge of 0.75 or more in a 30 m window).</li>
+      <li><b>Level</b> is the low median of the surface inside the channel, in metres NAVD88. <b>Held</b> means above 0.6 m. <b>At tide height</b> means 0.6 m or below.</li>
+    </ul>
+    <h3>Controls, and what they showed</h3>
+    <ul>
+      <li><b>Length.</b> The city's 400 miles for Cape Coral was the check on the detector. It finds <span data-v="cc_allres_mi"></span> miles of residential narrow water there,
+      <span data-v="cc_mi"></span> under the canal rule. Had it found half, nothing else on this page would have been reported.</li>
+      <li><b>Two classifications, never merged.</b> Lidar level and the state's water type agree on <span data-v="agree_all"></span>% of canal length coast-wide.
+      Where they disagree the page shows the disagreement in violet instead of choosing.</li>
+      <li><b>Unbuilt creeks</b> as the control for the fill measurement, described above.</li>
+      <li><b>Canal towns and lake suburbs</b> as the control for the canal rule, with its error rates printed beside the rule.</li>
+    </ul>
+    <h3>What this does not say</h3>
+    <ul>
+      <li>It does not count saltwater canals. Rotonda West's canals are fresh and held at 0.2 to 0.45 m, inside the tide's range; Apollo Beach's are plainly tidal and the state's
+      polygon there says stream. Below 0.6 m the lidar cannot tell held from tidal, and the state's map is wrong in places. Only &ldquo;held above 0.6 m&rdquo; is certain.</li>
+      <li>It does not say the city is wrong, only that its figure cannot be reproduced. The city does not publish its method.</li>
+      <li>Nothing here is about whether a boat can reach the Gulf. Bridges, locks, depth and distance are not measured.</li>
+      <li>Levels are the stage on the day each area was flown, and tidal water is mostly a contractor's constant, not a tide.</li>
+      <li>Water wider than 110 m is left out, so lakes and basins add nothing to any length. Canals under about 15 m wide, and ones roofed by trees or culverted, are missed.</li>
+      <li>The metre between canal lots and unbuilt creek banks is not all fill. Some estates were cut into pine flatwoods that already stood above the marsh.</li>
+      <li>Freeboard is not flood risk. It is the height of lots and streets above the canal on a calm day.</li>
+      <li>Monroe County and the Keys are not included. Tiles with under about 9 km of residential street were not downloaded.</li>
+    </ul>
+    <h3>What failed</h3>
+    <ul>
+      <li><b>The map as the map.</b> The first plan took canal centrelines from OpenStreetMap. It has 24 km of them on Marco Island, where the lidar finds <span data-v="marco_km"></span> km, and none in Apollo Beach. The national hydrography dataset draws those same canals as coastline. The plan was dropped and the lidar became the map.</li>
+      <li><b>Trenches.</b> Looking for anything cut below the house lots found every street in Cape Coral: 953 km of &ldquo;canal&rdquo; in one tile. Lots are filled above the roads too.</li>
+      <li><b>The ruler.</b> Straightness was meant to separate dug canals from natural and landscaped water everywhere. It recognises grid canals (94% of Cape Coral's length) and fails on finger canals: 6% in Punta Gorda, 1% in Hernando Beach. It survives only as half of an either-or rule.</li>
+      <li><b>Level as a tidal test.</b> The first classifier called everything at or below 0.6 m tidal. Rotonda West broke it.</li>
+      <li><b>A coast-wide tidal share.</b> It moves by more than twenty points with the definition of a canal, so it is shown as a range and not as a result.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  Elevation: USGS 3DEP. Streets, labels and comparison lines: &copy; OpenStreetMap contributors. Water types: Florida DEP. Boundaries: US Census Bureau.
+  Every figure on this page is computed in your browser from the arrays inside this file; nothing is fetched while you read except the visit count.
+</footer>
+</main>
+</div>
+
+<script>
+const B64 = "__PAYLOAD__";
+const MI = 1.609344;
+const $ = (s, el) => (el || document).querySelector(s);
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const fmt = (x, d) => x.toLocaleString("en-US", {minimumFractionDigits: d || 0, maximumFractionDigits: d || 0});
+function dec(s, T){ const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return T === Uint8Array ? u : new T(u.buffer); }
+async function unpack(){
+  const b = atob(B64), u = new Uint8Array(b.length);
+  for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i);
+  const st = new Blob([u]).stream().pipeThrough(new DecompressionStream("gzip"));
+  return JSON.parse(await new Response(st).text());
+}
+function wq(vals, wts, qs){            /* length-weighted quantiles */
+  const idx = Array.from(vals.keys()).sort((a, b) => vals[a] - vals[b]);
+  let tot = 0; for (const w of wts) tot += w;
+  const out = []; let acc = 0, k = 0;
+  for (const q of qs){ while (k < idx.length - 1 && acc + wts[idx[k]] < q * tot){ acc += wts[idx[k]]; k++; } out.push(vals[idx[k]]); }
+  return out;
+}
+const svgEl = (w, h, inner) => `<svg viewBox="0 0 ${w} ${h}" role="img">${inner}</svg>`;
+
+let P, C, N, RULES, rule = 0, plateIx = 0;
+const TIDE = 60;                     /* cm: nothing tidal stands above this on an ordinary day */
+
+function setup(p){
+  P = p; const c = p.comps; N = c.n;
+  C = {L: dec(c.L, Float32Array), w: dec(c.w, Uint8Array), lv: dec(c.lv, Int16Array), bk: dec(c.bk, Int16Array), st: dec(c.st, Int16Array),
+       ru: dec(c.ru, Uint8Array), res: dec(c.res, Uint8Array), nat: dec(c.nat, Uint8Array), can: dec(c.can, Uint8Array),
+       co: dec(c.co, Uint8Array), pl: dec(c.pl, Uint16Array), dep: dec(c.dep, Uint8Array),
+       lon: dec(c.lon, Float32Array), lat: dec(c.lat, Float32Array)};
+  const base = i => C.res[i] >= 50 && C.nat[i] < 50;
+  RULES = [
+    {name: "Networks of 2 km, or ruler-straight", f: i => base(i) && (C.L[i] >= 2000 || C.ru[i] >= 50)},
+    {name: "Any narrow water by houses", f: i => base(i)},
+    {name: "Networks of 2 km only", f: i => base(i) && C.L[i] >= 2000},
+    {name: "Ruler-straight only", f: i => base(i) && C.ru[i] >= 50},
+    {name: "Only what OpenStreetMap calls a canal", f: i => base(i) && C.can[i] >= 50},
+  ];
+  for (const r of RULES){ r.m = new Uint8Array(N); for (let i = 0; i < N; i++) r.m[i] = r.f(i) ? 1 : 0; }
+  for (const pl of p.plates){ pl.Z = dec(pl.z, Uint8Array); pl.Cc = dec(pl.c, Uint8Array); }
+}
+/* class of a piece: 0 tidal (low, not mapped fresh), 1 held, 2 disputed (low, mapped fresh) */
+const cls = i => C.lv[i] > TIDE ? 1 : (C.dep[i] === 2 ? 2 : 0);
+
+function tally(mask, extra){
+  const t = {km: 0, k: [0, 0, 0], osm: 0};
+  for (let i = 0; i < N; i++){ if (!mask[i] || (extra && !extra(i))) continue; const km = C.L[i] / 1000; t.km += km; t.k[cls(i)] += km; t.osm += km * C.can[i] / 100; }
+  t.low = t.k[0] + t.k[2];
+  return t;
+}
+function put(vals){ for (const el of document.querySelectorAll("[data-v]")){ const k = el.dataset.v; if (k in vals) el.textContent = vals[k]; } }
+
+function headline(){
+  const m = RULES[0].m, ccIx = P.names.places.indexOf("Cape Coral"), inCC = i => C.pl[i] === ccIx;
+  const all = tally(m), cc = tally(m, inCC), ccAll = tally(RULES[1].m, inCC);
+  let depF = 0, bothF = 0, bothT = 0, lowF = 0, agL = 0, agOK = 0;
+  for (let i = 0; i < N; i++){
+    if (!m[i]) continue; const km = C.L[i] / 1000, low = C.lv[i] <= TIDE;
+    if (C.dep[i]){ agL += km; if (low === (C.dep[i] === 1)) agOK += km; }
+    if (!inCC(i)) continue;
+    if (C.dep[i] === 2) depF += km;
+    if (!low && C.dep[i] === 2) bothF += km;
+    if (low && C.dep[i] === 1) bothT += km;
+    if (low && C.dep[i] === 2) lowF += km;
+  }
+  const town = n => tally(m, i => C.pl[i] === P.names.places.indexOf(n));
+  const marco = town("Marco Island");
+  const shares = RULES.map(r => { const t = tally(r.m); return 100 * t.low / t.km; });
+  const ccHeld = RULES.map(r => tally(r.m, inCC).k[1] / MI);
+  let gap = 0; for (let i = 0; i < N; i++) if (m[i] && inCC(i) && C.lv[i] > 55 && C.lv[i] <= 105) gap += C.L[i] / 1000;
+  const POS = ["Cape Coral", "Port Charlotte", "Punta Gorda", "Marco Island", "Lehigh Acres", "Golden Gate", "Rotonda", "Apollo Beach", "Hudson", "St. James City", "Hernando Beach", "North Port"];
+  const NEG = ["Palmer Ranch", "Lakewood Ranch", "Estero", "East Lake", "Sun City Center", "The Meadows", "Island Walk", "Gateway", "Plantation", "Trinity"];
+  const share = list => { const ix = new Set(list.map(n => P.names.places.indexOf(n))); const a = tally(m, i => ix.has(C.pl[i])), b = tally(RULES[1].m, i => ix.has(C.pl[i])); return 100 * a.km / b.km; };
+  let mx = -1e9; for (let i = 0; i < N; i++) if (m[i] && C.lv[i] > mx) mx = C.lv[i];
+  let resKm = 0; for (let i = 0; i < N; i++) if (C.res[i] >= 50) resKm += C.L[i] / 1000;
+  const sea = P.sea, zero = sea.cm.filter(v => v === 0).length;
+  put({
+    tiles: fmt(P.meta.tiles), narrow_km: fmt(P.meta.narrow_km), res_km: fmt(resKm),
+    all_km: fmt(all.km), all_held: fmt(all.k[1]), all_tidal: fmt(all.k[0]), all_disp: fmt(all.k[2]), all_osm: fmt(100 * all.osm / all.km),
+    marco_osm: fmt(100 * marco.osm / marco.km), marco_km: fmt(marco.km),
+    cc_km: fmt(cc.km), cc_mi: fmt(cc.km / MI), cc_pct_of_400: fmt(100 * cc.km / MI / 400), cc_allres_mi: fmt(ccAll.km / MI),
+    cc_held_km: fmt(cc.k[1]), cc_held_mi: fmt(cc.k[1] / MI), cc_low_km: fmt(cc.low),
+    cc_dep_km: fmt(depF), cc_dep_mi: fmt(depF / MI), cc_both_fresh: fmt(bothF), cc_both_tidal: fmt(bothT), cc_low_fresh: fmt(lowF),
+    cc_agree_pct: fmt(100 * (bothF + bothT) / cc.km), agree_all: fmt(100 * agOK / agL),
+    cc_gap_km: fmt(gap), cc_held_min_mi: fmt(Math.min(...ccHeld)), cc_held_max_mi: fmt(Math.max(...ccHeld)),
+    share_min: fmt(Math.min(...shares)), share_max: fmt(Math.max(...shares)), cal_pos: fmt(share(POS)), cal_neg: fmt(share(NEG)),
+    max_level: fmt(mx / 100, 1), sea_tiles: sea.n, sea_zero: zero,
+  });
+  /* the three bars */
+  const rows = [
+    ["City of Cape Coral, utilities page", 300, 100, "300 mi fresh", "the rest of its 400"],
+    ["Lidar: water standing above 0.6 m", cc.k[1] / MI, cc.low / MI, fmt(cc.k[1] / MI) + " mi held", fmt(cc.low / MI) + " mi at tide height"],
+    ["Florida DEP waterbody map", depF / MI, (cc.km - depF) / MI, fmt(depF / MI) + " mi fresh", fmt((cc.km - depF) / MI) + " mi estuary"],
+  ];
+  const W = 900, x0 = 0, sc = (W - 10) / 400; let s = "";
+  rows.forEach((r, k) => {
+    const y = 26 + k * 62;
+    s += `<text class="lab" x="0" y="${y - 8}">${r[0]}</text>`;
+    s += `<rect x="${x0}" y="${y}" width="${r[1] * sc}" height="24" fill="var(--held)"/>`;
+    s += `<rect x="${x0 + r[1] * sc + 1}" y="${y}" width="${r[2] * sc}" height="24" fill="var(--tide)" opacity="${k ? 1 : .35}"/>`;
+    s += `<text x="${x0 + 6}" y="${y + 16}" style="fill:#fff;font-weight:600">${r[3]}</text>`;
+    s += `<text x="${x0 + r[1] * sc + 8}" y="${y + 16}" style="fill:${k ? "#fff" : "var(--ink)"};font-weight:600">${r[4]}</text>`;
+  });
+  for (let v = 0; v <= 400; v += 100) s += `<line class="ax" x1="${v * sc}" x2="${v * sc}" y1="196" y2="202"/><text x="${v * sc}" y="214" text-anchor="${v ? (v === 400 ? "end" : "middle") : "start"}">${v} mi</text>`;
+  $("#ccbars").innerHTML = svgEl(W, 218, s);
+  /* Cape Coral level histogram, 5 cm bins, stacked by the STATE's class */
+  const lo = -10, hi = 460, nb = (hi - lo) / 5, hm = new Float64Array(nb), hf = new Float64Array(nb);
+  for (let i = 0; i < N; i++){ if (!m[i] || !inCC(i)) continue; const b = Math.floor((C.lv[i] - lo) / 5); if (b < 0 || b >= nb) continue; (C.dep[i] === 2 ? hf : hm)[b] += C.L[i] / 1000; }
+  let top = 0; for (let b = 0; b < nb; b++) top = Math.max(top, hm[b] + hf[b]);
+  const H = 250, pb = 26, bw = (W - 30) / nb, ys = (H - pb - 10) / top; let h = "";
+  for (let b = 0; b < nb; b++){
+    const x = 30 + b * bw, a = hm[b] * ys, f = hf[b] * ys;
+    if (a > 0) h += `<rect x="${x}" y="${H - pb - a}" width="${bw - .6}" height="${a}" fill="var(--tide)"/>`;
+    if (f > 0) h += `<rect x="${x}" y="${H - pb - a - f}" width="${bw - .6}" height="${f}" fill="var(--held)"/>`;
+  }
+  const xv = v => 30 + (v * 100 - lo) / 5 * bw;
+  for (let v = 0; v <= 4.5; v += .5) h += `<line class="ax" x1="${xv(v)}" x2="${xv(v)}" y1="${H - pb}" y2="${H - pb + 5}"/><text x="${xv(v)}" y="${H - 6}" text-anchor="middle">${v.toFixed(1)} m</text>`;
+  for (let v = 20; v <= top; v += 20) h += `<line class="ax" x1="30" x2="${W}" y1="${H - pb - v * ys}" y2="${H - pb - v * ys}" opacity=".5"/><text x="26" y="${H - pb - v * ys + 4}" text-anchor="end">${v}</text>`;
+  h += `<line x1="${xv(.6) + bw}" x2="${xv(.6) + bw}" y1="6" y2="${H - pb}" stroke="var(--ink)" stroke-dasharray="4 3"/><text x="${xv(.6) + bw + 5}" y="14">0.6 m: above this, held for certain</text><text x="2" y="10">km</text>`;
+  $("#cchist").innerHTML = svgEl(W, H, h);
+  /* freeboard */
+  const fbRows = [], q = [0.1, 0.25, 0.5, 0.75, 0.9];
+  const grab = (test, src) => { const v = [], w = []; for (let i = 0; i < N; i++){ if (!test(i)) continue; const top2 = src === "st" ? C.st[i] : C.bk[i]; if (top2 === -32768) continue; v.push((top2 - C.lv[i]) / 100); w.push(C.L[i]); } return wq(v, w, q); };
+  const tl = grab(i => m[i] && C.lv[i] <= TIDE, "bk"), ts = grab(i => m[i] && C.lv[i] <= TIDE, "st");
+  const hl = grab(i => m[i] && C.lv[i] > TIDE, "bk"), hs = grab(i => m[i] && C.lv[i] > TIDE, "st");
+  const wl = grab(i => C.res[i] < 10 && C.lv[i] <= TIDE, "bk"), wh = grab(i => C.res[i] < 10 && C.lv[i] > TIDE, "bk");
+  fbRows.push(["Canals at tide height, lots", tl, "--tide"], ["Canals at tide height, street", ts, "--tide"], ["Held canals, lots", hl, "--held"], ["Held canals, street", hs, "--held"],
+              ["Unbuilt narrow water at tide height, banks (control)", wl, "--pond"], ["Unbuilt narrow water held above, banks (control)", wh, "--pond"]);
+  const fx = v => 10 + v / 3 * (W - 60); let f = "";
+  fbRows.forEach((r, k) => {
+    const y = 30 + k * 44, d = r[1];
+    f += `<text class="lab" x="10" y="${y - 7}">${r[0]}</text>`;
+    f += `<line x1="${fx(d[0])}" x2="${fx(d[4])}" y1="${y + 8}" y2="${y + 8}" stroke="var(${r[2]})" stroke-width="2"/>`;
+    f += `<rect x="${fx(d[1])}" y="${y}" width="${fx(d[3]) - fx(d[1])}" height="16" fill="var(${r[2]})" opacity=".8"/>`;
+    f += `<line x1="${fx(d[2])}" x2="${fx(d[2])}" y1="${y - 3}" y2="${y + 19}" stroke="var(--ink)" stroke-width="2.5"/>`;
+    f += `<text x="${fx(d[4]) + 8}" y="${y + 13}">${d[2].toFixed(2)} m</text>`;
+  });
+  for (let v = 0; v <= 3; v += .5) f += `<line class="ax" x1="${fx(v)}" x2="${fx(v)}" y1="282" y2="288"/><text x="${fx(v)}" y="300" text-anchor="middle">${v.toFixed(1)} m</text>`;
+  $("#fbchart").innerHTML = svgEl(W, 304, f);
+  put({fb_tidal_lot: tl[2].toFixed(1), fb_tidal_street: ts[2].toFixed(1), fb_held_lot: hl[2].toFixed(1), fb_held_street: hs[2].toFixed(1), fb_wild: wl[2].toFixed(1)});
+  /* sea level per tile */
+  const sb = new Map(); for (const v of sea.cm){ if (v < -80 || v > 60) continue; const b = Math.round(v / 2) * 2; sb.set(b, (sb.get(b) || 0) + 1); }
+  let smax = 0; for (const v of sb.values()) smax = Math.max(smax, v);
+  let g = ""; const sx = v => 24 + (v + 80) / 140 * 410, SH = 170;
+  for (const [b, n] of sb) g += `<rect x="${sx(b) - 2.5}" y="${SH - 24 - n / smax * (SH - 40)}" width="5" height="${n / smax * (SH - 40)}" fill="var(--tide)"/>`;
+  for (let v = -80; v <= 60; v += 20) g += `<line class="ax" x1="${sx(v)}" x2="${sx(v)}" y1="${SH - 24}" y2="${SH - 19}"/><text x="${sx(v)}" y="${SH - 6}" text-anchor="middle">${(v / 100).toFixed(1)}</text>`;
+  g += `<text x="${sx(0) + 8}" y="16">${sb.get(0) || 0} tiles at 0.00 m</text>`;
+  $("#seachart").innerHTML = svgEl(450, SH, g);
+  /* OSM coverage by town */
+  const towns = P.names.places.map((n, ix) => { const t = tally(m, i => C.pl[i] === ix); return {n, km: t.km, osm: t.km ? 100 * t.osm / t.km : 0}; }).filter(t => t.km >= 33).sort((a, b) => b.km - a.km).slice(0, 14);
+  let o = ""; towns.forEach((t, k) => { const y = 8 + k * 19;
+    o += `<text class="lab" x="0" y="${y + 11}">${t.n}</text><rect x="140" y="${y}" width="190" height="13" fill="var(--rule2)"/><rect x="140" y="${y}" width="${1.9 * t.osm}" height="13" fill="var(--ink2)"/><text x="338" y="${y + 11}">${fmt(t.osm)}% of ${fmt(t.km)} km</text>`; });
+  $("#osmchart").innerHTML = svgEl(450, 14 + towns.length * 19, o);
+}
+
+/* ---------- rule-dependent views ---------- */
+function drawRule(){
+  const m = RULES[rule].m;
+  $("#rulebtns").querySelectorAll("button").forEach((b, k) => b.setAttribute("aria-pressed", k === rule));
+  let h = "<tr><th>What counts as a canal</th><th>km</th><th>at tide height</th><th>Cape Coral km</th><th>Cape Coral held</th></tr>";
+  const ccIx = P.names.places.indexOf("Cape Coral");
+  RULES.forEach((r, k) => { const t = tally(r.m), c2 = tally(r.m, i => C.pl[i] === ccIx);
+    h += `<tr class="${k === rule ? "on" : ""}"><td>${r.name}</td><td>${fmt(t.km)}</td><td>${fmt(100 * t.low / t.km)}%</td><td>${fmt(c2.km)}</td><td>${fmt(c2.k[1])}</td></tr>`; });
+  $("#ruletb").innerHTML = h;
+  let c = "<tr><th>County</th><th>Canal km</th><th>At tide height</th><th>Low, state says fresh</th><th>Held above 0.6 m</th><th>Highest held water</th><th>In OpenStreetMap</th></tr>";
+  const rows = P.names.counties.map((n, ix) => { const t = tally(m, i => C.co[i] === ix); let mx = null; for (let i = 0; i < N; i++) if (m[i] && C.co[i] === ix && C.lv[i] > TIDE && (mx === null || C.lv[i] > mx)) mx = C.lv[i]; return {n, t, mx}; }).filter(r => r.t.km >= 0.5).sort((a, b) => b.t.km - a.t.km);
+  for (const r of rows) c += `<tr><td>${r.n}</td><td>${fmt(r.t.km)}</td><td>${fmt(r.t.k[0])}</td><td>${fmt(r.t.k[2])}</td><td>${fmt(r.t.k[1])}</td><td>${r.mx === null ? "" : (r.mx / 100).toFixed(1) + " m"}</td><td>${fmt(100 * r.t.osm / r.t.km)}%</td></tr>`;
+  const T = tally(m); c += `<tr class="tot"><td>22 Gulf counties</td><td>${fmt(T.km)}</td><td>${fmt(T.k[0])}</td><td>${fmt(T.k[2])}</td><td>${fmt(T.k[1])}</td><td></td><td>${fmt(100 * T.osm / T.km)}%</td></tr>`;
+  $("#cotb").innerHTML = c;
+  drawCoast();
+}
+function drawCoast(){
+  const cv = $("#coast"), W = 900, H = 780, dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = W * dpr; cv.height = H * dpr; const g = cv.getContext("2d"); g.scale(dpr, dpr);
+  const lon0 = -87.75, lon1 = -80.75, lat0 = 25.7, lat1 = 31.05, k = Math.cos(28.4 * Math.PI / 180);
+  const s = Math.min(W / ((lon1 - lon0) * k), H / (lat1 - lat0));
+  const X = lon => (lon - lon0) * k * s, Y = lat => (lat1 - lat) * s;
+  g.clearRect(0, 0, W, H);
+  for (const pass of [0, 1]) for (const r of P.outline){
+    if (r.g !== pass) continue; const a = r.A || (r.A = dec(r.xy, Float32Array));
+    g.beginPath(); for (let i = 0; i < a.length; i += 2){ const x = X(a[i]), y = Y(a[i + 1]); i ? g.lineTo(x, y) : g.moveTo(x, y); } g.closePath();
+    g.fillStyle = pass ? css("--sunk") : "transparent"; if (pass) g.fill();
+    g.strokeStyle = css(pass ? "--ink3" : "--rule"); g.lineWidth = pass ? .8 : .6; g.stroke();
+  }
+  const m = RULES[rule].m, col = [css("--tide"), css("--held"), css("--disp")];
+  g.globalAlpha = .55;
+  for (const want of [1, 0, 2]) for (let i = 0; i < N; i++){ if (!m[i] || cls(i) !== want) continue;
+    g.fillStyle = col[want]; g.beginPath(); g.arc(X(C.lon[i]), Y(C.lat[i]), Math.max(1.1, Math.sqrt(C.L[i] / 1000) * 1.5), 0, 6.3); g.fill(); }
+  g.globalAlpha = 1; g.fillStyle = css("--ink2"); g.font = '500 17px "IBM Plex Mono", monospace';
+  for (const [n, lon, lat] of [["Pensacola", -87.22, 30.52], ["Panama City", -85.66, 30.27], ["Tampa Bay", -82.9, 27.62], ["Cape Coral", -82.62, 26.52], ["Naples", -82.25, 26.1], ["Crystal River", -83.25, 28.9]])
+    g.fillText(n, X(lon), Y(lat));
+}
+
+/* ---------- plates ---------- */
+function ramp(z, dark){            /* land tint by elevation, m */
+  const st = dark ? [[-1, 22, 30, 34], [1, 40, 47, 44], [3, 74, 76, 58], [6, 116, 108, 72], [12, 164, 146, 96], [20, 196, 180, 130]]
+                  : [[-1, 244, 241, 228], [1, 234, 227, 200], [3, 219, 205, 160], [6, 196, 174, 118], [12, 160, 132, 82], [20, 120, 94, 58]];
+  for (let k = 1; k < st.length; k++) if (z <= st[k][0] || k === st.length - 1){ const a = st[k - 1], b = st[k], t = Math.max(0, Math.min(1, (z - a[0]) / (b[0] - a[0]))); return [a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t, a[3] + (b[3] - a[3]) * t]; }
+}
+const hex = h => { h = h.replace("#", ""); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; };
+function drawPlate(){
+  const pl = P.plates[plateIx], W = pl.w, H = pl.h, Z = pl.Z, K = pl.Cc, z0 = P.meta.zmin, zs = P.meta.zstep;
+  $("#platebtns").querySelectorAll("button").forEach((b, k) => b.setAttribute("aria-pressed", k === plateIx));
+  const dark = matchMedia("(prefers-color-scheme: dark)").matches && document.documentElement.dataset.theme !== "light" || document.documentElement.dataset.theme === "dark";
+  const cv = $("#plate"); cv.width = W; cv.height = H; const g = cv.getContext("2d"), im = g.createImageData(W, H), d = im.data;
+  const wc = [null, hex(css("--sea")), hex(css("--tide")), hex(css("--held")), hex(css("--pond")), hex(css("--disp"))];
+  for (let y = 0, i = 0; y < H; y++) for (let x = 0; x < W; x++, i++){
+    const k = K[i]; let c;
+    if (k) c = wc[k];
+    else {
+      const z = z0 + Z[i] * zs; c = ramp(z, dark);
+      const zr = x + 1 < W && !K[i + 1] ? z0 + Z[i + 1] * zs : z, zd = y + 1 < H && !K[i + W] ? z0 + Z[i + W] * zs : z;
+      const sh = Math.max(-.1, Math.min(.1, ((zr - z) + (z - zd)) * .12));
+      let f = 1 + sh; if (Math.floor(z) !== Math.floor(zr) || Math.floor(z) !== Math.floor(zd)) f *= dark ? 1.28 : .8;
+      c = [c[0] * f, c[1] * f, c[2] * f];
+    }
+    d[i * 4] = c[0]; d[i * 4 + 1] = c[1]; d[i * 4 + 2] = c[2]; d[i * 4 + 3] = 255;
+  }
+  g.putImageData(im, 0, 0);
+  const km = 1000 / pl.px, bx = 18, by = H - 20;
+  g.fillStyle = css("--panel"); g.globalAlpha = .85; g.fillRect(bx - 8, by - 24, 2 * km + 16, 36); g.globalAlpha = 1;
+  g.fillStyle = css("--ink"); g.fillRect(bx, by, 2 * km, 3); g.fillRect(bx, by - 5, 2, 8); g.fillRect(bx + km, by - 5, 2, 8); g.fillRect(bx + 2 * km - 2, by - 5, 2, 8);
+  g.font = `600 ${Math.round(W / 62)}px "IBM Plex Mono", monospace`; g.fillText("2 km", bx + 2, by - 9);
+  let n = [0, 0, 0, 0, 0, 0]; for (let i = 0; i < K.length; i++) n[K[i]]++;
+  const tot = n[2] + n[3] + n[5] || 1;
+  $("#platenote").textContent = `${pl.name}: ${fmt(W * pl.px / 1000)} by ${fmt(H * pl.px / 1000)} km at ${pl.px} m a pixel. Of the canal water on this plate, ${fmt(100 * n[2] / tot)}% of the area stands at tide height, ${fmt(100 * n[3] / tot)}% is held above 0.6 m and ${fmt(100 * n[5] / tot)}% is low water the state maps as fresh. Classes on the plates use the default canal rule.`;
+}
+function hoverPlate(e){
+  const pl = P.plates[plateIx], cv = $("#plate"), r = cv.getBoundingClientRect();
+  const x = Math.floor((e.clientX - r.left) / r.width * pl.w), y = Math.floor((e.clientY - r.top) / r.height * pl.h);
+  if (x < 0 || y < 0 || x >= pl.w || y >= pl.h) return;
+  const i = y * pl.w + x, z = P.meta.zmin + pl.Z[i] * P.meta.zstep, k = pl.Cc[i];
+  const what = ["ground", "open water", "canal at tide height", "canal held above the tide", "other narrow water", "canal at tide height, state says fresh"][k];
+  $("#readout").textContent = pl.Z[i] === 255 ? "no data" : `${k ? "water surface" : "elevation"} ${z.toFixed(2)} m NAVD88 · ${what}`;
+}
+
+(async function(){
+  let p;
+  try { p = await unpack(); } catch (e){ $("#loading").textContent = "This page needs a browser with DecompressionStream (any current one)."; return; }
+  setup(p);
+  $("#platebtns").innerHTML = p.plates.map(pl => `<button type="button">${pl.name}</button>`).join("");
+  $("#platebtns").querySelectorAll("button").forEach((b, k) => b.onclick = () => { plateIx = k; drawPlate(); });
+  $("#rulebtns").innerHTML = RULES.map(r => `<button type="button">${r.name}</button>`).join("");
+  $("#rulebtns").querySelectorAll("button").forEach((b, k) => b.onclick = () => { rule = k; drawRule(); });
+  $("#loading").hidden = true; $("#strip").hidden = false; $("#main").hidden = false;
+  headline(); drawRule(); drawPlate();
+  $("#plate").addEventListener("pointermove", hoverPlate);
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { drawPlate(); drawCoast(); });
+})();
+</script>
+</body>
+</html>

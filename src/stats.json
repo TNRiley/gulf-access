@@ -1,0 +1,357 @@
+{
+ "network or ruled (default)": {
+  "km": 3376,
+  "low_share": 60.3,
+  "tidal": 1793,
+  "disputed": 243,
+  "held": 1340,
+  "osm_cover": 33.6
+ },
+ "any residential narrow water": {
+  "km": 5991,
+  "low_share": 48.3,
+  "tidal": 2497,
+  "disputed": 396,
+  "held": 3098,
+  "osm_cover": 20.1
+ },
+ "networks of 2 km or more": {
+  "km": 2144,
+  "low_share": 71.9,
+  "tidal": 1364,
+  "disputed": 177,
+  "held": 603,
+  "osm_cover": 41.0
+ },
+ "ruled-straight only": {
+  "km": 2584,
+  "low_share": 53.7,
+  "tidal": 1201,
+  "disputed": 187,
+  "held": 1197,
+  "osm_cover": 37.7
+ },
+ "OSM calls it a canal": {
+  "km": 1203,
+  "low_share": 58.6,
+  "tidal": 576,
+  "disputed": 129,
+  "held": 498,
+  "osm_cover": 93.5
+ },
+ "cape_coral": {
+  "km": 592.6,
+  "mi": 368.2,
+  "all_res_km": 622.6,
+  "held_km": 182.8,
+  "held_mi": 113.6,
+  "low_km": 409.9,
+  "dep_fresh_km": 216.7,
+  "dep_fresh_mi": 134.6,
+  "dep_marine_km": 375.9,
+  "both_tidal": 369.2,
+  "both_fresh": 176.1,
+  "low_but_fresh": 40.6,
+  "held_but_marine": 6.7,
+  "osm_cover": 74.8
+ },
+ "agreement_pct": 89.4,
+ "freeboard": {
+  "tidal_lot": [
+   1.18,
+   1.42,
+   1.71,
+   2.0,
+   2.48,
+   2036
+  ],
+  "tidal_street": [
+   1.08,
+   1.24,
+   1.44,
+   1.75,
+   2.18,
+   2033
+  ],
+  "held_lot": [
+   1.15,
+   1.5,
+   1.92,
+   2.28,
+   2.59,
+   1340
+  ],
+  "held_street": [
+   1.04,
+   1.33,
+   1.69,
+   2.1,
+   2.55,
+   1340
+  ],
+  "wild_low": [
+   0.37,
+   0.45,
+   0.58,
+   0.91,
+   1.33,
+   2458
+  ],
+  "wild_held": [
+   0.43,
+   0.74,
+   1.19,
+   1.81,
+   2.5,
+   1620
+  ]
+ },
+ "towns": {
+  "Cape Coral": {
+   "km": 593,
+   "low": 410,
+   "held": 183,
+   "osm": 75
+  },
+  "Lehigh Acres": {
+   "km": 189,
+   "low": 0,
+   "held": 189,
+   "osm": 87
+  },
+  "Port Charlotte": {
+   "km": 146,
+   "low": 105,
+   "held": 41,
+   "osm": 5
+  },
+  "North Port": {
+   "km": 117,
+   "low": 2,
+   "held": 115,
+   "osm": 35
+  },
+  "Punta Gorda": {
+   "km": 98,
+   "low": 97,
+   "held": 1,
+   "osm": 95
+  },
+  "Marco Island": {
+   "km": 76,
+   "low": 76,
+   "held": 0,
+   "osm": 1
+  },
+  "Bonita Springs": {
+   "km": 61,
+   "low": 30,
+   "held": 31,
+   "osm": 0
+  },
+  "St. Petersburg": {
+   "km": 56,
+   "low": 54,
+   "held": 2,
+   "osm": 14
+  },
+  "Golden Gate": {
+   "km": 53,
+   "low": 0,
+   "held": 53,
+   "osm": 94
+  },
+  "Apollo Beach": {
+   "km": 43,
+   "low": 42,
+   "held": 1,
+   "osm": 0
+  },
+  "Rotonda": {
+   "km": 42,
+   "low": 41,
+   "held": 1,
+   "osm": 86
+  },
+  "Englewood": {
+   "km": 40,
+   "low": 35,
+   "held": 5,
+   "osm": 13
+  },
+  "Town 'n' Country": {
+   "km": 37,
+   "low": 36,
+   "held": 1,
+   "osm": 20
+  },
+  "Estero": {
+   "km": 35,
+   "low": 0,
+   "held": 35,
+   "osm": 2
+  },
+  "Hudson": {
+   "km": 35,
+   "low": 35,
+   "held": 0,
+   "osm": 77
+  },
+  "Hernando Beach": {
+   "km": 34,
+   "low": 34,
+   "held": 0,
+   "osm": 21
+  },
+  "St. James City": {
+   "km": 34,
+   "low": 34,
+   "held": 0,
+   "osm": 0
+  },
+  "Fort Myers": {
+   "km": 30,
+   "low": 0,
+   "held": 30,
+   "osm": 5
+  }
+ },
+ "counties": {
+  "Escambia": {
+   "km": 2,
+   "low": 1,
+   "held": 1
+  },
+  "Santa Rosa": {
+   "km": 6,
+   "low": 4,
+   "held": 2
+  },
+  "Okaloosa": {
+   "km": 19,
+   "low": 10,
+   "held": 9
+  },
+  "Walton": {
+   "km": 12,
+   "low": 7,
+   "held": 4
+  },
+  "Bay": {
+   "km": 35,
+   "low": 28,
+   "held": 7
+  },
+  "Gulf": {
+   "km": 4,
+   "low": 3,
+   "held": 2
+  },
+  "Franklin": {
+   "km": 5,
+   "low": 4,
+   "held": 0
+  },
+  "Wakulla": {
+   "km": 12,
+   "low": 11,
+   "held": 1
+  },
+  "Taylor": {
+   "km": 4,
+   "low": 3,
+   "held": 0
+  },
+  "Dixie": {
+   "km": 19,
+   "low": 19,
+   "held": 1
+  },
+  "Levy": {
+   "km": 4,
+   "low": 3,
+   "held": 1
+  },
+  "Citrus": {
+   "km": 54,
+   "low": 27,
+   "held": 27
+  },
+  "Hernando": {
+   "km": 68,
+   "low": 46,
+   "held": 23
+  },
+  "Pasco": {
+   "km": 92,
+   "low": 79,
+   "held": 13
+  },
+  "Pinellas": {
+   "km": 163,
+   "low": 140,
+   "held": 23
+  },
+  "Hillsborough": {
+   "km": 150,
+   "low": 111,
+   "held": 39
+  },
+  "Manatee": {
+   "km": 122,
+   "low": 74,
+   "held": 48
+  },
+  "Sarasota": {
+   "km": 344,
+   "low": 135,
+   "held": 210
+  },
+  "Charlotte": {
+   "km": 595,
+   "low": 496,
+   "held": 99
+  },
+  "Lee": {
+   "km": 1216,
+   "low": 653,
+   "held": 564
+  },
+  "Collier": {
+   "km": 451,
+   "low": 184,
+   "held": 267
+  }
+ },
+ "sea": {
+  "tiles": 181,
+  "at_zero": 135,
+  "values": [
+   [
+    0,
+    130
+   ],
+   [
+    -2,
+    5
+   ],
+   [
+    -64,
+    4
+   ],
+   [
+    -22,
+    3
+   ],
+   [
+    4,
+    2
+   ],
+   [
+    12,
+    2
+   ]
+  ]
+ },
+ "max_held_level": 12.07
+}
